@@ -1,0 +1,31 @@
+product_id,product_name,category,unit_price,is_active
+101,Laptop Pro 14,Electronics,"1,299.00",true
+102,Wireless Mouse,Accessories,29.99,true
+103,Mechanical Keyboard,Accessories,89.99,true
+104,Monitor 27,Electronics,$ 249.99,true
+105,Gaming Chair,Furniture,199.00,true
+106,HD Webcam,Accessories,49.99,false
+107,Gaming Headset,Accessories,79.99,true
+108,Laptop Stand,Accessories,,true
+109,Office Desk,Furniture,299.00,true
+110, USB-C Dock ,Accessories,119.99,true
+111,Portable SSD 1TB,Storage,99.99,TRUE
+112,Bluetooth Speaker,AUDIO,59.99,true
+113,Tablet Air 10,Electronics,449.00,false
+114,Smartphone Case,Accessories,19.99,yes
+115,Desk Lamp,Home Office,39.99,true
+116,Ergonomic Chair,Furniture,$ 349.00,true
+117,Noise Canceling Headphones,Audio,159.99,true
+118,External Hard Drive 2TB,Storage,79.99,true
+119,Wireless Charger,Accessories,,true
+120,Monitor Arm,Home Office,69.99,0
+121,Standing Desk, furniture ,499.00,true
+122,USB Flash Drive 128GB,Storage,14.99,true
+123,Travel Backpack,Accessories,54.99,true
+124,Conference Microphone,Audio,89.99,
+125,Ethernet Adapter,Networking,18.99,true
+126,Wi-Fi Router,Networking,129.99,true
+127,Cable Organizer,Home Office,9.99,false
+128,Graphics Tablet,Electronics,,true
+129,Power Strip,Home Office,22.99,true
+130,Portable Projector,Electronics,399.00,true

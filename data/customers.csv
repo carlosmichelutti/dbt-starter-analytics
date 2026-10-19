@@ -1,0 +1,51 @@
+customer_id,full_name,email,registration_date,city,state
+1,James Smith,james.smith@example.com,2024-01-01,New York,New York
+2,Olivia Johnson,olivia.johnson@example.com,2024-01-02,Los Angeles,California
+3,William Williams,william.williams@example.com,2024-01-03,Chicago,Illinois
+4,Emma Brown,emma.brown@example.com,2024-01-04,Houston,Texas
+5,  Benjamin Jones  ,benjamin.jones@example.com,2024-01-05,Phoenix,Arizona
+6,Charlotte Miller,charlotte.miller@example.com,2024-01-06,Philadelphia,Pennsylvania
+7,Henry Davis,,2024-01-07,San Antonio,Texas
+8,Amelia Wilson,amelia.wilson@example.com,2024-01-08, San Diego ,California
+9,Alexander Anderson,ALEXANDER.ANDERSON@EXAMPLE.COM,2024-01-09,Dallas,Texas
+10,Sophia Thomas,sophia.thomas@example.com,2024-01-10,San Jose,California
+11,Daniel Taylor,daniel.taylor@example.com,2024/01/11,Austin,Texas
+12,Isabella Moore,isabella.moore@example.com,2024-01-12,Jacksonville,Florida
+13,Michael Jackson,michael.jackson@example.com,01-13-2024,Fort Worth,texas
+14,Evelyn Martin,evelyn.martin@example.com,2024-01-14,Columbus,Ohio
+15,Ethan Lee,ethan.lee@example.com,2024-01-15,Indianapolis,Indiana
+16,Emma Brown,emma.brown@example.com,2024-01-04,Houston,Texas
+17,Samuel White,samuel.white@example.com,"January 17, 2024",Seattle,Washington
+18,Emily Harris,emily.harris@example.com,2024-01-18,Denver,Colorado
+19,David Clark,david.clark@example.com,2024-01-19, Boston ,Massachusetts
+20,Elizabeth Lewis,ELIZABETH.LEWIS@EXAMPLE.COM,2024-01-20,Nashville,Tennessee
+21,Joseph Robinson,joseph.robinson@example.com,2024-02-21,Portland,Oregon
+22,Sofia Walker,sofia.walker@example.com,2024/02/22,Las Vegas,Nevada
+23,Matthew Young,,2024-02-23,Detroit,Michigan
+24,Avery Allen,avery.allen@example.com,2024-02-24,Memphis,Tennessee
+25,  Jackson King  ,jackson.king@example.com,2024-02-25,Baltimore,Maryland
+26,Ella Wright,ella.wright@example.com,02-26-2024,New York,New York
+27,Sebastian Scott,sebastian.scott@example.com,2024-02-27,Los Angeles,California
+28,Scarlett Green,scarlett.green@example.com,2024-02-28,Chicago,illinois
+29,Jack Baker,jack.baker@example.com,2024-02-01,Houston,Texas
+30,Grace Adams,grace.adams@example.com,2024-02-02,Phoenix,Arizona
+31,Owen Nelson,owen.nelson@example.com,2024-02-03,Philadelphia,Pennsylvania
+32,Daniel Taylor,daniel.taylor@example.com,2024/01/11,Austin,Texas
+33,Theodore Campbell,theodore.campbell@example.com,2024/02/05,San Diego,California
+34,Victoria Mitchell,victoria.mitchell@example.com,"February 6, 2024", Dallas ,Texas
+35,Aiden Carter,aiden.carter@example.com,2024-02-07,San Jose,California
+36,Riley Roberts,riley.roberts@example.com,2024-02-08,Austin,Texas
+37,John Phillips,JOHN.PHILLIPS@EXAMPLE.COM,2024-02-09,Jacksonville,Florida
+38,Lily Evans,lily.evans@example.com,2024-02-10,Fort Worth,Texas
+39,Luke Turner,luke.turner.example.com,02-11-2024,Columbus,Ohio
+40,Eleanor Parker,eleanor.parker@example.com,2024-02-12,Indianapolis,Indiana
+41,Noah Collins,,2024-03-13,Charlotte,North Carolina
+42,Hannah Edwards,hannah.edwards@example.com,2024-03-14,Seattle,Washington
+43,  Liam Stewart  ,liam.stewart@example.com,2024-03-15,Denver,Colorado
+44,Natalie Morris,natalie.morris@example.com,,Boston,Massachusetts
+45,Oliver Reed,oliver.reed@example.com,2024-03-17,Nashville,Tennessee
+46,Joseph Robinson,joseph.robinson@example.com,2024-02-21,Portland,Oregon
+47,Lucas Morgan,lucas.morgan@example.com,2024-03-19,Las Vegas,Nevada
+48,Audrey Bell,audrey.bell@example.com,2024-03-20,Detroit,michigan
+49,Mason Murphy,mason.murphy@example.com,2024-02-30,Memphis,Tennessee
+50,Claire Bailey,claire.bailey@example.com,2024-03-22,Baltimore,Maryland
