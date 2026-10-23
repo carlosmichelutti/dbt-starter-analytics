@@ -179,3 +179,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# dbt
+dbt_starter_analytics/target/
+dbt_starter_analytics/dbt_packages/
+dbt_starter_analytics/logs/
