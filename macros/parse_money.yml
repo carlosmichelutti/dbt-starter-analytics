@@ -1,0 +1,19 @@
+version: 2
+
+macros:
+  - name: parse_money
+    description: >-
+      PostgreSQL 16+ expression that converts monetary text to numeric without
+      changing its sign. Accepts ungrouped integers, one or two decimal places
+      using a comma or dot, US grouping (1,299.00), Brazilian grouping (1.299,00),
+      and integers with at least two grouped separators (1,234,567). Optional
+      leading $ or R$ currency symbols are removed; they do not convert currencies.
+      A sign before or after the currency prefix is preserved. Missing, malformed,
+      ambiguous values such as 1,234 or 1.234, and amounts with more than two
+      decimal places return NULL. Grouped amounts with both separators must have
+      one or two decimal places. The macro does not round, impute zero, or enforce
+      business rules about negative values. Callers must flag unusable results.
+    arguments:
+      - name: expression
+        type: string
+        description: SQL expression for the source value, such as rp.unit_price.
