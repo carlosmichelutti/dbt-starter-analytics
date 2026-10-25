@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  - name: stg_order_items
+    description: >-
+      Initial cleanup of ecom.order_items, preserving one output row per source
+      row, including duplicate identifiers and unmatched order or product
+      references. Parses monetary text with parse_money and preserves signed
+      quantities, prices, and discounts. Missing or unusable amounts become NULL;
+      quality flags describe issues without filtering records or imputing zero.
+    columns:
+      - name: order_item_id
+        description: Source order item identifier; uniqueness is not enforced here.
+        data_type: integer
+      - name: order_id
+        description: Source order identifier; a matching order is not required.
+        data_type: integer
+      - name: product_id
+        description: Source product identifier; a matching product is not required.
+        data_type: integer
+      - name: quantity
+        description: Source integer quantity, preserving NULL, zero, and negatives.
+        data_type: integer
+      - name: unit_price
+        description: >-
+          Numeric unit price parsed with parse_money, preserving negatives.
+          Missing, malformed, or ambiguous input becomes NULL. The macro accepts
+          one or two decimal places and US or Brazilian grouping.
+        data_type: numeric
+      - name: discount
+        description: >-
+          Numeric discount parsed with parse_money, preserving negatives. Missing,
+          malformed, or ambiguous input becomes NULL rather than zero. The current
+          quality rule compares this amount with unit_price; whether the source
+          discount applies per unit or per line still needs business confirmation.
+        data_type: numeric
+      - name: has_quantity_problem
+        description: 1 when quantity is NULL, zero, or negative, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: has_unit_price_problem
+        description: 1 when unit_price is NULL, zero, or negative, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: has_discount_problem
+        description: >-
+          1 when discount is NULL, negative, or greater than a known unit_price,
+          otherwise 0. A zero flag does not establish the upper bound when
+          unit_price is NULL; consult has_unit_price_problem as well.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+
+unit_tests:
+  - name: items_preserve_duplicates_unmatched_ids_and_signed_values
+    model: stg_order_items
+    given:
+      - input: source('ecom', 'order_items')
+        rows:
+          - {order_item_id: 1, order_id: 999, product_id: 999, quantity: -2, unit_price: '-29,99', discount: '-5.00'}
+          - {order_item_id: 1, order_id: 999, product_id: 999, quantity: 2, unit_price: '1.299,00', discount: '10,00'}
+          - {order_item_id: 2, order_id: 999, product_id: 999, quantity: null, unit_price: 'invalid', discount: ''}
+    expect:
+      rows:
+        - {order_item_id: 1, order_id: 999, product_id: 999, quantity: -2, unit_price: '-29.99', discount: '-5.00', has_quantity_problem: 1, has_unit_price_problem: 1, has_discount_problem: 1}
+        - {order_item_id: 1, order_id: 999, product_id: 999, quantity: 2, unit_price: '1299.00', discount: '10.00', has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+        - {order_item_id: 2, order_id: 999, product_id: 999, quantity: null, unit_price: null, discount: null, has_quantity_problem: 1, has_unit_price_problem: 1, has_discount_problem: 1}

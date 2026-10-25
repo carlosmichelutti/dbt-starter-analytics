@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: stg_products
+    description: >-
+      Initial cleanup of ecom.products, preserving one output row per source row,
+      including duplicate product identifiers. Standardizes text and parses prices
+      with parse_money. Negative prices are preserved and flagged; missing,
+      malformed, or ambiguous prices become NULL. No rows are filtered out.
+    columns:
+      - name: product_id
+        description: Source product identifier; uniqueness is not enforced here.
+        data_type: integer
+      - name: product_name
+        description: Product name with surrounding spaces removed and uppercased.
+        data_type: text
+      - name: category
+        description: Product category with surrounding spaces removed and uppercased.
+        data_type: text
+      - name: unit_price
+        description: >-
+          Numeric unit price with its original sign. Accepts one or two decimal
+          places and US or Brazilian grouping, as documented in parse_money.
+          Missing, malformed, or ambiguous input becomes NULL; no currency
+          conversion or zero imputation is performed.
+        data_type: numeric
+      - name: is_active
+        description: >-
+          Boolean parsed from recognized true/false tokens. The existing fallback
+          for missing or unrecognized tokens is FALSE.
+        data_type: boolean
+        data_tests:
+          - not_null
+      - name: has_unit_price_problem
+        description: 1 when unit_price is NULL, zero, or negative, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+
+unit_tests:
+  - name: products_preserve_signed_prices_and_flag_unusable_input
+    model: stg_products
+    given:
+      - input: source('ecom', 'products')
+        rows:
+          - {product_id: 1, product_name: ' item ', category: ' test ', unit_price: '-R$ 1.299,00', is_active: 'yes'}
+          - {product_id: 2, product_name: 'item', category: 'test', unit_price: '$ 1,299.00', is_active: '0'}
+          - {product_id: 3, product_name: 'item', category: 'test', unit_price: '1,234', is_active: 'true'}
+          - {product_id: 4, product_name: 'item', category: 'test', unit_price: '', is_active: 'true'}
+    expect:
+      rows:
+        - {product_id: 1, unit_price: '-1299.00', has_unit_price_problem: 1}
+        - {product_id: 2, unit_price: '1299.00', has_unit_price_problem: 0}
+        - {product_id: 3, unit_price: null, has_unit_price_problem: 1}
+        - {product_id: 4, unit_price: null, has_unit_price_problem: 1}

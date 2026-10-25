@@ -1,20 +1,9 @@
-{{ config(materialized='view') }}
-
 WITH raw_products AS (
     SELECT
         rp.product_id AS product_id
     ,   UPPER(TRIM(rp.product_name)) AS product_name
     ,   UPPER(TRIM(rp.category)) AS category
-    ,   CASE
-            WHEN rp.unit_price IS NOT NULL THEN CAST(
-                TRIM(
-                    REPLACE(
-                            REPLACE(rp.unit_price, ',', ''), '$', ''
-                        )
-                    ) AS NUMERIC
-                )
-            ELSE 0
-        END AS unit_price
+    ,   {{ parse_money('rp.unit_price') }} AS unit_price
     ,   CASE
             WHEN LOWER(TRIM(rp.is_active)) IN (
                     'true', '1', 's', 'sim', 'yes'
@@ -29,7 +18,7 @@ WITH raw_products AS (
 SELECT
     rp.*
 ,   CASE
-        WHEN rp.unit_price = 0 THEN 1
+        WHEN (rp.unit_price IS NULL) OR (rp.unit_price <= 0) THEN 1
         ELSE 0
     END AS has_unit_price_problem
 FROM raw_products AS rp
