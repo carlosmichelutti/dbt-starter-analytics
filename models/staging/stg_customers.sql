@@ -1,5 +1,3 @@
-{{ config(materialized='view') }}
-
 WITH raw_customers AS (
     SELECT
         rc.customer_id AS customer_id

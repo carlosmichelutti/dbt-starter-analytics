@@ -1,5 +1,3 @@
-{{ config(materialized='view') }}
-
 WITH raw_orders AS (
     SELECT
         ro.order_id AS order_id
