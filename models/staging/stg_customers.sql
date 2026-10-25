@@ -1,30 +1,30 @@
 {{ config(materialized='view') }}
 
-WITH customers AS (
+WITH raw_customers AS (
     SELECT
-        c.customer_id AS customer_id
-    ,   UPPER(TRIM(c.full_name)) AS full_name
+        rc.customer_id AS customer_id
+    ,   UPPER(TRIM(rc.full_name)) AS full_name
     ,   CASE
-            WHEN (TRIM(c.email) IS NULL) OR (TRIM(c.email) = '') THEN NULL
-            ELSE LOWER(TRIM(c.email))
+            WHEN (TRIM(rc.email) IS NULL) OR (TRIM(rc.email) = '') THEN NULL
+            ELSE LOWER(TRIM(rc.email))
         END AS email
     ,   CASE
-            WHEN pg_input_is_valid(TRIM(c.registration_date), 'date')
-                THEN CAST(TRIM(c.registration_date) AS DATE)
+            WHEN pg_input_is_valid(TRIM(rc.registration_date), 'date')
+                THEN CAST(TRIM(rc.registration_date) AS DATE)
             ELSE NULL
         END AS registration_date
-    ,   UPPER(TRIM(c.city)) AS city
-    ,   UPPER(TRIM(c.state)) AS state
-    FROM raw.customers AS c
+    ,   UPPER(TRIM(rc.city)) AS city
+    ,   UPPER(TRIM(rc.state)) AS state
+    FROM {{ source('ecom', 'customers') }} AS rc
 )
 SELECT
-    c.*
+    rc.*
 ,   CASE
-        WHEN c.email IS NULL THEN 1
+        WHEN rc.email IS NULL THEN 1
         ELSE 0
     END AS has_email_problem
 ,   CASE
-        WHEN c.registration_date IS NULL THEN 1
+        WHEN rc.registration_date IS NULL THEN 1
         ELSE 0
     END AS has_registration_date_problem
-FROM customers AS c
+FROM raw_customers AS rc
