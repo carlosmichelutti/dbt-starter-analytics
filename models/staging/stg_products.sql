@@ -1,35 +1,35 @@
 {{ config(materialized='view') }}
 
-WITH products AS (
+WITH raw_products AS (
     SELECT
-        p.product_id AS product_id
-    ,   UPPER(TRIM(p.product_name)) AS product_name
-    ,   UPPER(TRIM(p.category)) AS category
+        rp.product_id AS product_id
+    ,   UPPER(TRIM(rp.product_name)) AS product_name
+    ,   UPPER(TRIM(rp.category)) AS category
     ,   CASE
-            WHEN p.unit_price IS NOT NULL THEN CAST(
+            WHEN rp.unit_price IS NOT NULL THEN CAST(
                 TRIM(
                     REPLACE(
-                            REPLACE(p.unit_price, ',', ''), '$', ''
+                            REPLACE(rp.unit_price, ',', ''), '$', ''
                         )
                     ) AS NUMERIC
                 )
             ELSE 0
         END AS unit_price
     ,   CASE
-            WHEN LOWER(TRIM(p.is_active)) IN (
+            WHEN LOWER(TRIM(rp.is_active)) IN (
                     'true', '1', 's', 'sim', 'yes'
                 ) THEN TRUE
-            WHEN LOWER(TRIM(p.is_active)) IN (
+            WHEN LOWER(TRIM(rp.is_active)) IN (
                     'false', '0', 'n', 'não', 'nao', 'no'
                 ) THEN FALSE
             ELSE FALSE
         END AS is_active
-    FROM raw.products AS p
+    FROM {{ source('ecom', 'products') }} AS rp
 )
 SELECT
-    p.*
+    rp.*
 ,   CASE
-        WHEN p.unit_price = 0 THEN 1
+        WHEN rp.unit_price = 0 THEN 1
         ELSE 0
     END AS has_unit_price_problem
-FROM products AS p
+FROM raw_products AS rp
