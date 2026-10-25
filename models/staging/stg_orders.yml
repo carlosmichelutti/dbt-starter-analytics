@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: >-
+      Initial cleanup of ecom.orders, preserving one output row per source row,
+      including duplicate order identifiers and unmatched customer references.
+      Converts dates and standardizes status and payment method text. No joins,
+      deduplication, or cross-table relationship validation is performed.
+    columns:
+      - name: order_id
+        description: Source order identifier; uniqueness is not enforced here.
+        data_type: integer
+      - name: customer_id
+        description: Source customer identifier; a matching customer is not required.
+        data_type: integer
+      - name: order_date
+        description: >-
+          Order date parsed using the session DateStyle. Missing or invalid input
+          becomes NULL; ambiguous formats are not resolved by this model.
+        data_type: date
+      - name: status
+        description: >-
+          Trimmed, uppercase status. COMPLETE and COMPLETED become COMPLETED;
+          CANCELLED and CANCELED become CANCELED. Missing values become UNDEFINED;
+          other statuses are preserved in uppercase.
+        data_type: text
+      - name: payment_method
+        description: >-
+          Trimmed, uppercase payment method with sequences of non-ASCII-letter
+          characters replaced by an underscore. Missing values become UNDEFINED.
+        data_type: text
+      - name: has_order_date_problem
+        description: 1 when order_date could not be populated, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false

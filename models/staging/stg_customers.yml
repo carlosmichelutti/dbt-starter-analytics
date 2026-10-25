@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: >-
+      Initial cleanup of ecom.customers, preserving one output row per source row,
+      including duplicate customer identifiers. Trims text, standardizes casing,
+      and converts registration dates using PostgreSQL date parsing. No
+      deduplication or cross-table relationship validation is performed.
+    columns:
+      - name: customer_id
+        description: Source customer identifier; uniqueness is not enforced here.
+        data_type: integer
+      - name: full_name
+        description: Customer name with surrounding spaces removed and uppercased.
+        data_type: text
+      - name: email
+        description: Trimmed, lowercase email; NULL and empty strings become NULL.
+        data_type: text
+      - name: registration_date
+        description: >-
+          Registration date parsed using the session DateStyle. Missing or invalid
+          input becomes NULL; ambiguous formats are not resolved by this model.
+        data_type: date
+      - name: city
+        description: Customer city with surrounding spaces removed and uppercased.
+        data_type: text
+      - name: state
+        description: Customer state with surrounding spaces removed and uppercased.
+        data_type: text
+      - name: has_email_problem
+        description: >-
+          1 when email is missing after cleanup, otherwise 0. Does not check email
+          syntax, uniqueness, or whether the address exists.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: has_registration_date_problem
+        description: 1 when registration_date could not be populated, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
