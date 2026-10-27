@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: fact_orders_by_customer
+    description: >-
+      Completed-sales aggregate with one row per customer_id that has at least
+      one COMPLETED order in fact_orders. Counts orders at order grain rather
+      than counting lines. Preserves unmatched customer identifiers through a
+      left join; their names remain NULL and relationships produce warnings.
+      Metrics cover retained valid lines, with no date breakdown. Customers with
+      no completed orders remain in dim_customers but are absent here.
+    columns:
+      - name: customer_id
+        description: Customer identifier; primary key of this aggregate.
+        data_type: integer
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+              config:
+                severity: warn
+      - name: customer_name
+        description: Current customer name; NULL when the customer record is absent.
+        data_type: text
+      - name: quantity_orders
+        description: Number of COMPLETED orders for this customer, regardless of line count.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: units_sold
+        description: Total units on valid lines belonging to COMPLETED orders.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: net_revenue
+        description: Total amount after line discounts, for COMPLETED orders only.
+        data_type: numeric
+        data_tests: [not_null]
+
+unit_tests:
+  - name: customer_sales_completed_orders_and_missing_customers
+    model: fact_orders_by_customer
+    given:
+      - input: ref('fact_orders')
+        rows:
+          - {order_id: 1, customer_id: 10, status: COMPLETED, quantity: 3, net_revenue: 45}
+          - {order_id: 2, customer_id: 10, status: COMPLETED, quantity: 1, net_revenue: 10}
+          - {order_id: 3, customer_id: 10, status: CANCELED, quantity: 2, net_revenue: 20}
+          - {order_id: 4, customer_id: 999, status: COMPLETED, quantity: 1, net_revenue: 5}
+          - {order_id: 5, customer_id: 10, status: REFUNDED, quantity: 1, net_revenue: 10}
+          - {order_id: 6, customer_id: 10, status: PAID, quantity: 1, net_revenue: 10}
+          - {order_id: 7, customer_id: 10, status: SHIPPED, quantity: 1, net_revenue: 10}
+      - input: ref('dim_customers')
+        rows:
+          - {customer_id: 10, customer_name: CUSTOMER}
+          - {customer_id: 20, customer_name: NO_SALES}
+    expect:
+      rows:
+        - {customer_id: 10, customer_name: CUSTOMER, quantity_orders: 2, units_sold: 4, net_revenue: 55}
+        - {customer_id: 999, customer_name: null, quantity_orders: 1, units_sold: 1, net_revenue: 5}

@@ -1,0 +1,67 @@
+version: 2
+
+models:
+  - name: fact_orders
+    description: >-
+      Order fact with one row per order_id, exposing validated order totals and
+      customer, date, status, and payment method for analysis. Includes all
+      statuses; filter to COMPLETED for the sales definition used by the customer
+      and product aggregates. Orders without valid lines are absent, and totals
+      cover only retained lines. Monetary amounts are not recognized revenue for
+      canceled, refunded, or other non-completed orders.
+    columns:
+      - name: order_id
+        description: Source order identifier; primary key of the fact.
+        data_type: integer
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('int_orders')
+                field: order_id
+      - name: customer_id
+        description: >-
+          Source customer identifier. Orders are retained when the corresponding
+          customer is absent, and the relationship test reports a warning.
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+              config:
+                severity: warn
+      - name: order_date
+        description: Valid order date from staging.
+        data_type: date
+        data_tests: [not_null]
+      - name: status
+        description: Normalized order status; filter to COMPLETED when calculating sales.
+        data_type: text
+        data_tests: [not_null]
+      - name: payment_method
+        description: Normalized payment method from staging.
+        data_type: text
+        data_tests: [not_null]
+      - name: quantity_order_items
+        description: Number of retained order lines; not the number of units purchased.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: quantity
+        description: Total number of units across retained order lines.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: discount
+        description: Total line discounts across retained order lines.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: gross_revenue
+        description: Total amount before discounts across retained order lines, for any status.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: net_revenue
+        description: Total amount after discounts across retained order lines, for any status.
+        data_type: numeric
+        data_tests: [not_null]

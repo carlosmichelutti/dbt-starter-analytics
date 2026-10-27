@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: fact_orders_by_product
+    description: >-
+      Completed-sales aggregate with one row per product_id that has a retained
+      valid line on a COMPLETED order. Counts distinct orders so repeated product
+      lines in one order do not inflate order counts. Preserves unmatched product
+      identifiers through a left join; names remain NULL and relationships warn.
+      Uses transaction prices even for inactive products or invalid catalog
+      prices. Order counts cannot be summed across products, since an order can
+      contain multiple products. Products without completed sales are absent.
+    columns:
+      - name: product_id
+        description: Product identifier; primary key of this aggregate.
+        data_type: integer
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+              config:
+                severity: warn
+      - name: product_name
+        description: Current product name; NULL when the catalog record is absent.
+        data_type: text
+      - name: quantity_orders
+        description: >-
+          Number of distinct COMPLETED orders containing this product. An order
+          with several products is counted once for each product.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: units_sold
+        description: Total units on retained lines for this product in COMPLETED orders.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: net_revenue
+        description: Total line amount after discounts, for COMPLETED orders only.
+        data_type: numeric
+        data_tests: [not_null]
+
+unit_tests:
+  - name: product_sales_distinct_orders_and_missing_products
+    model: fact_orders_by_product
+    given:
+      - input: ref('int_order_items')
+        rows:
+          - {order_item_id: 1, order_id: 1, product_id: 10, status: COMPLETED, quantity: 2, net_revenue: 15}
+          - {order_item_id: 2, order_id: 1, product_id: 10, status: COMPLETED, quantity: 1, net_revenue: 10}
+          - {order_item_id: 3, order_id: 2, product_id: 10, status: COMPLETED, quantity: 1, net_revenue: 5}
+          - {order_item_id: 4, order_id: 3, product_id: 10, status: CANCELED, quantity: 1, net_revenue: 10}
+          - {order_item_id: 5, order_id: 1, product_id: 999, status: COMPLETED, quantity: 1, net_revenue: 7}
+          - {order_item_id: 6, order_id: 4, product_id: 10, status: REFUNDED, quantity: 1, net_revenue: 10}
+          - {order_item_id: 7, order_id: 5, product_id: 10, status: PAID, quantity: 1, net_revenue: 10}
+          - {order_item_id: 8, order_id: 6, product_id: 10, status: SHIPPED, quantity: 1, net_revenue: 10}
+      - input: ref('dim_products')
+        rows:
+          - {product_id: 10, product_name: PRODUCT}
+          - {product_id: 20, product_name: NO_SALES}
+    expect:
+      rows:
+        - {product_id: 10, product_name: PRODUCT, quantity_orders: 2, units_sold: 4, net_revenue: 30}
+        - {product_id: 999, product_name: null, quantity_orders: 1, units_sold: 1, net_revenue: 7}
