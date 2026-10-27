@@ -16,4 +16,4 @@ macros:
     arguments:
       - name: expression
         type: string
-        description: SQL expression for the source value, such as rp.unit_price.
+        description: SQL expression for the source value, such as raw_products.unit_price.
