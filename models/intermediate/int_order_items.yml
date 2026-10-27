@@ -1,0 +1,113 @@
+version: 2
+
+models:
+  - name: int_order_items
+    description: >-
+      Validated order lines enriched with order headers, with one row per
+      order_item_id. Removes exact duplicate lines and headers before joining;
+      conflicting identifiers are not resolved and must fail uniqueness tests.
+      Requires a matching order with a valid date, positive quantity and price,
+      and a known line discount between zero and gross line revenue. The staging
+      discount flag is not used because it compares discount with unit price.
+      All statuses and unmatched customer/product references are preserved.
+    columns:
+      - name: order_item_id
+        description: Source order line identifier; primary key of this model.
+        data_type: integer
+        data_tests: [not_null, unique]
+      - name: order_id
+        description: Identifier of the matching order header.
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: customer_id
+        description: >-
+          Customer identifier from the order header. Missing customer records
+          produce a warning without removing the order line.
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+              config:
+                severity: warn
+      - name: product_id
+        description: >-
+          Product identifier from the order line. Missing catalog records produce
+          a warning without removing the order line.
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+              config:
+                severity: warn
+      - name: order_date
+        description: Valid order date parsed by staging.
+        data_type: date
+        data_tests: [not_null]
+      - name: status
+        description: Normalized order status; includes non-completed orders.
+        data_type: text
+        data_tests: [not_null]
+      - name: payment_method
+        description: Normalized payment method from the order header.
+        data_type: text
+        data_tests: [not_null]
+      - name: quantity
+        description: Positive number of units on this line.
+        data_type: integer
+        data_tests: [not_null]
+      - name: unit_price
+        description: Positive transaction price per unit, independent of catalog price.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: discount
+        description: >-
+          Total discount for the entire line, applied once rather than per unit;
+          cannot exceed quantity multiplied by unit_price.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: gross_revenue
+        description: Line amount before discount; quantity multiplied by unit_price.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: net_revenue
+        description: Line amount after discount; gross_revenue minus discount.
+        data_type: numeric
+        data_tests: [not_null]
+
+unit_tests:
+  - name: order_lines_deduplicate_and_validate_line_discounts
+    model: int_order_items
+    given:
+      - input: ref('stg_orders')
+        rows:
+          - {order_id: 1, customer_id: 999, order_date: '2026-01-01', status: COMPLETED, payment_method: PIX, has_order_date_problem: 0}
+          - {order_id: 1, customer_id: 999, order_date: '2026-01-01', status: COMPLETED, payment_method: PIX, has_order_date_problem: 0}
+          - {order_id: 2, customer_id: 1, order_date: null, status: COMPLETED, payment_method: PIX, has_order_date_problem: 1}
+          - {order_id: 3, customer_id: 1, order_date: '2026-01-02', status: CANCELED, payment_method: PIX, has_order_date_problem: 0}
+      - input: ref('stg_order_items')
+        rows:
+          - {order_item_id: 1, order_id: 1, product_id: 999, quantity: 3, unit_price: 10, discount: 15, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 1, order_id: 1, product_id: 999, quantity: 3, unit_price: 10, discount: 15, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 2, order_id: 1, product_id: 1, quantity: 2, unit_price: 10, discount: 21, has_quantity_problem: 0, has_unit_price_problem: 0}
+          - {order_item_id: 3, order_id: 1, product_id: 1, quantity: 1, unit_price: 10, discount: null, has_quantity_problem: 0, has_unit_price_problem: 0}
+          - {order_item_id: 4, order_id: 1, product_id: 1, quantity: 1, unit_price: 10, discount: -1, has_quantity_problem: 0, has_unit_price_problem: 0}
+          - {order_item_id: 5, order_id: 1, product_id: 1, quantity: 0, unit_price: 10, discount: 0, has_quantity_problem: 1, has_unit_price_problem: 0}
+          - {order_item_id: 6, order_id: 1, product_id: 1, quantity: 1, unit_price: null, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 1}
+          - {order_item_id: 7, order_id: 2, product_id: 1, quantity: 1, unit_price: 10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 0}
+          - {order_item_id: 8, order_id: 404, product_id: 1, quantity: 1, unit_price: 10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 0}
+          - {order_item_id: 9, order_id: 3, product_id: 1, quantity: 1, unit_price: 10, discount: 10, has_quantity_problem: 0, has_unit_price_problem: 0}
+    expect:
+      rows:
+        - {order_item_id: 1, order_id: 1, customer_id: 999, product_id: 999, status: COMPLETED, quantity: 3, discount: 15, gross_revenue: 30, net_revenue: 15}
+        - {order_item_id: 9, order_id: 3, customer_id: 1, product_id: 1, status: CANCELED, quantity: 1, discount: 10, gross_revenue: 10, net_revenue: 0}

@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: int_orders
+    description: >-
+      Order-level aggregation of validated lines, with one row per order_id.
+      Includes all statuses, only orders with at least one valid line, and only
+      amounts from retained lines; totals may be partial when other lines were
+      rejected. Unit prices are not summed because they are not additive.
+    columns:
+      - name: order_id
+        description: Source order identifier; primary key of this model.
+        data_type: integer
+        data_tests: [not_null, unique]
+      - name: customer_id
+        description: Customer identifier from the order header.
+        data_type: integer
+        data_tests: [not_null]
+      - name: order_date
+        description: Valid order date from the order header.
+        data_type: date
+        data_tests: [not_null]
+      - name: status
+        description: Normalized order status, including non-completed orders.
+        data_type: text
+        data_tests: [not_null]
+      - name: payment_method
+        description: Normalized payment method from the order header.
+        data_type: text
+        data_tests: [not_null]
+      - name: quantity_order_items
+        description: Number of retained order lines, distinct from units purchased.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: quantity
+        description: Total number of units across retained order lines.
+        data_type: bigint
+        data_tests: [not_null]
+      - name: discount
+        description: Sum of total line discounts across retained order lines.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: gross_revenue
+        description: Sum of gross line amounts before discounts, for any status.
+        data_type: numeric
+        data_tests: [not_null]
+      - name: net_revenue
+        description: Sum of net line amounts after discounts, for any status.
+        data_type: numeric
+        data_tests: [not_null]
+
+unit_tests:
+  - name: orders_aggregate_lines_without_summing_unit_prices
+    model: int_orders
+    given:
+      - input: ref('int_order_items')
+        rows:
+          - {order_item_id: 1, order_id: 1, customer_id: 10, order_date: '2026-01-01', status: COMPLETED, payment_method: PIX, quantity: 2, unit_price: 10, discount: 5, gross_revenue: 20, net_revenue: 15}
+          - {order_item_id: 2, order_id: 1, customer_id: 10, order_date: '2026-01-01', status: COMPLETED, payment_method: PIX, quantity: 1, unit_price: 30, discount: 0, gross_revenue: 30, net_revenue: 30}
+          - {order_item_id: 3, order_id: 2, customer_id: 10, order_date: '2026-01-01', status: CANCELED, payment_method: PIX, quantity: 1, unit_price: 10, discount: 0, gross_revenue: 10, net_revenue: 10}
+    expect:
+      rows:
+        - {order_id: 1, customer_id: 10, status: COMPLETED, quantity_order_items: 2, quantity: 3, discount: 5, gross_revenue: 50, net_revenue: 45}
+        - {order_id: 2, customer_id: 10, status: CANCELED, quantity_order_items: 1, quantity: 1, discount: 0, gross_revenue: 10, net_revenue: 10}
