@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: dim_products
+    description: >-
+      Product dimension with one row per product_id. Removes exact duplicates;
+      conflicting catalog records must fail uniqueness tests. Preserves inactive
+      products and products with missing or invalid catalog prices, so historical
+      sales remain describable. Transaction amounts use the price on the order
+      line, not this catalog price. Uses current attributes without historical
+      versions or generated surrogate keys.
+    columns:
+      - name: product_id
+        description: Source product identifier; natural primary key of the dimension.
+        data_type: integer
+        data_tests: [not_null, unique]
+      - name: product_name
+        description: Trimmed, uppercase product name from staging.
+        data_type: text
+      - name: category
+        description: Trimmed, uppercase product category from staging.
+        data_type: text
+      - name: unit_price
+        description: >-
+          Current catalog price, which may be NULL, zero, or negative. Consult
+          has_unit_price_problem; this attribute is not used to calculate sales.
+        data_type: numeric
+      - name: is_active
+        description: Current catalog active flag; FALSE does not exclude historical sales.
+        data_type: boolean
+        data_tests: [not_null]
+      - name: has_unit_price_problem
+        description: 1 when catalog unit_price is NULL, zero, or negative, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+
+unit_tests:
+  - name: products_keep_inactive_and_invalid_catalog_prices
+    model: dim_products
+    given:
+      - input: ref('stg_products')
+        rows:
+          - {product_id: 1, product_name: PRODUCT, category: CATEGORY, unit_price: null, is_active: false, has_unit_price_problem: 1}
+          - {product_id: 1, product_name: PRODUCT, category: CATEGORY, unit_price: null, is_active: false, has_unit_price_problem: 1}
+          - {product_id: 2, product_name: OTHER, category: CATEGORY, unit_price: -10, is_active: true, has_unit_price_problem: 1}
+    expect:
+      rows:
+        - {product_id: 1, unit_price: null, is_active: false, has_unit_price_problem: 1}
+        - {product_id: 2, unit_price: -10, is_active: true, has_unit_price_problem: 1}

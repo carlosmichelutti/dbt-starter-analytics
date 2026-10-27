@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >-
+      Customer dimension with one row per customer_id. Removes exact duplicates
+      but does not choose between conflicting profiles; uniqueness tests expose
+      those conflicts. Missing email and invalid registration dates never exclude
+      a customer, because these attributes are optional for sales analysis.
+      Quality flags remain available to consumers. Uses current source attributes,
+      without historical versions or generated surrogate keys.
+    columns:
+      - name: customer_id
+        description: Source customer identifier; natural primary key of the dimension.
+        data_type: integer
+        data_tests: [not_null, unique]
+      - name: customer_name
+        description: Trimmed, uppercase customer name from staging.
+        data_type: text
+      - name: email
+        description: Normalized email; may be NULL or shared across customers.
+        data_type: text
+      - name: registration_date
+        description: Parsed registration date; NULL is allowed and does not exclude sales.
+        data_type: date
+      - name: city
+        description: Trimmed, uppercase customer city.
+        data_type: text
+      - name: state
+        description: Trimmed, uppercase customer state.
+        data_type: text
+      - name: has_email_problem
+        description: 1 when email is missing after staging cleanup, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: has_registration_date_problem
+        description: 1 when registration_date could not be populated, otherwise 0.
+        data_type: integer
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+
+unit_tests:
+  - name: customers_keep_incomplete_profiles_and_remove_exact_duplicates
+    model: dim_customers
+    given:
+      - input: ref('stg_customers')
+        rows:
+          - {customer_id: 1, full_name: CUSTOMER, email: null, registration_date: null, city: CITY, state: SP, has_email_problem: 1, has_registration_date_problem: 1}
+          - {customer_id: 1, full_name: CUSTOMER, email: null, registration_date: null, city: CITY, state: SP, has_email_problem: 1, has_registration_date_problem: 1}
+    expect:
+      rows:
+        - {customer_id: 1, customer_name: CUSTOMER, email: null, registration_date: null, has_email_problem: 1, has_registration_date_problem: 1}
