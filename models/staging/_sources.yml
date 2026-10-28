@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: ecom
-    schema: raw
+    schema: "{{ var('raw_schema', 'raw') }}"
     description: >-
       Raw e-commerce data containing customers, products, orders, and order line
       items, used as input for staging models that standardize and validate the data.
@@ -37,7 +37,7 @@ sources:
             data_tests: [not_null, unique]
           - name: category
             data_tests: []
-          - name: product_id
+          - name: unit_price
             data_tests: []
           - name: is_active
             data_tests: []

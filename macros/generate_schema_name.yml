@@ -1,0 +1,16 @@
+version: 2
+
+macros:
+  - name: generate_schema_name
+    description: >-
+      Uses the exact configured schema only for seeds tagged raw_input, so the
+      demo fixtures match the ecom sources. Defaults to raw; raw_schema overrides
+      both seeds and sources for isolated environments. All other resources keep
+      dbt's default target.schema or target.schema_custom_schema naming.
+    arguments:
+      - name: custom_schema_name
+        type: string
+        description: Configured custom schema, or none for the target schema.
+      - name: node
+        type: any
+        description: dbt resource being named, including its type and tags.

@@ -16,6 +16,13 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+seeds:
+  dbt_starter_analytics:
+    raw:
+      +schema: "{{ var('raw_schema', 'raw') }}"
+      +tags: [raw_input]
+      +quote_columns: false
+
 models:
   dbt_starter_analytics:
     staging:
