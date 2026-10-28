@@ -39,6 +39,7 @@ models:
               arguments:
                 values: [0, 1]
                 quote: false
+
       - name: has_registration_date_problem
         description: 1 when registration_date could not be populated, otherwise 0.
         data_type: integer
@@ -48,3 +49,18 @@ models:
               arguments:
                 values: [0, 1]
                 quote: false
+
+unit_tests:
+  - name: customers_normalize_text_and_flag_missing_or_invalid_dates
+    model: stg_customers
+    given:
+      - input: source('ecom', 'customers')
+        rows:
+          - {customer_id: 1, full_name: ' customer ', email: ' TEST@EXAMPLE.COM ', registration_date: '2026-01-02', city: ' city ', state: ' sp '}
+          - {customer_id: 2, full_name: CUSTOMER, email: '   ', registration_date: '2026-02-30', city: CITY, state: SP}
+          - {customer_id: 3, full_name: CUSTOMER, email: null, registration_date: null, city: CITY, state: SP}
+    expect:
+      rows:
+        - {customer_id: 1, full_name: CUSTOMER, email: test@example.com, registration_date: '2026-01-02', city: CITY, state: SP, has_email_problem: 0, has_registration_date_problem: 0}
+        - {customer_id: 2, full_name: CUSTOMER, email: null, registration_date: null, city: CITY, state: SP, has_email_problem: 1, has_registration_date_problem: 1}
+        - {customer_id: 3, full_name: CUSTOMER, email: null, registration_date: null, city: CITY, state: SP, has_email_problem: 1, has_registration_date_problem: 1}

@@ -39,3 +39,20 @@ models:
               arguments:
                 values: [0, 1]
                 quote: false
+
+unit_tests:
+  - name: orders_normalize_status_aliases_and_reject_invalid_dates
+    model: stg_orders
+    given:
+      - input: source('ecom', 'orders')
+        rows:
+          - {order_id: 1, customer_id: 10, order_date: '2026-01-02', status: ' complete ', payment_method: 'credit card'}
+          - {order_id: 2, customer_id: 10, order_date: '2026-02-30', status: ' cancelled ', payment_method: '   '}
+          - {order_id: 3, customer_id: 999, order_date: null, status: null, payment_method: null}
+          - {order_id: 4, customer_id: 10, order_date: '2026-01-03', status: ' shipped ', payment_method: 'pix'}
+    expect:
+      rows:
+        - {order_id: 1, customer_id: 10, order_date: '2026-01-02', status: COMPLETED, payment_method: CREDIT_CARD, has_order_date_problem: 0}
+        - {order_id: 2, customer_id: 10, order_date: null, status: CANCELED, payment_method: UNDEFINED, has_order_date_problem: 1}
+        - {order_id: 3, customer_id: 999, order_date: null, status: UNDEFINED, payment_method: UNDEFINED, has_order_date_problem: 1}
+        - {order_id: 4, customer_id: 10, order_date: '2026-01-03', status: SHIPPED, payment_method: PIX, has_order_date_problem: 0}
