@@ -7,8 +7,8 @@ models:
       order_item_id. Removes exact duplicate lines and headers before joining;
       conflicting identifiers are not resolved and must fail uniqueness tests.
       Requires a matching order with a valid date, positive quantity and price,
-      and a known line discount between zero and gross line revenue. The staging
-      discount flag is not used because it compares discount with unit price.
+      and a known line discount from zero up to, but not including, gross line
+      revenue. Uses staging quality flags; zero-net-revenue lines are rejected.
       All statuses and unmatched customer/product references are preserved.
     columns:
       - name: order_item_id
@@ -65,25 +65,25 @@ models:
       - name: quantity
         description: Positive number of units on this line.
         data_type: integer
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: unit_price
         description: Positive transaction price per unit, independent of catalog price.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: discount
         description: >-
           Total discount for the entire line, applied once rather than per unit;
-          cannot exceed quantity multiplied by unit_price.
+          must be strictly below quantity multiplied by unit_price.
         data_type: numeric
         data_tests: [not_null]
       - name: gross_revenue
         description: Line amount before discount; quantity multiplied by unit_price.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: net_revenue
-        description: Line amount after discount; gross_revenue minus discount.
+        description: Strictly positive line amount; gross_revenue minus discount.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
 
 unit_tests:
   - name: order_lines_deduplicate_and_validate_line_discounts
@@ -97,17 +97,20 @@ unit_tests:
           - {order_id: 3, customer_id: 1, order_date: '2026-01-02', status: CANCELED, payment_method: PIX, has_order_date_problem: 0}
       - input: ref('stg_order_items')
         rows:
-          - {order_item_id: 1, order_id: 1, product_id: 999, quantity: 3, unit_price: 10, discount: 15, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
-          - {order_item_id: 1, order_id: 1, product_id: 999, quantity: 3, unit_price: 10, discount: 15, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
-          - {order_item_id: 2, order_id: 1, product_id: 1, quantity: 2, unit_price: 10, discount: 21, has_quantity_problem: 0, has_unit_price_problem: 0}
-          - {order_item_id: 3, order_id: 1, product_id: 1, quantity: 1, unit_price: 10, discount: null, has_quantity_problem: 0, has_unit_price_problem: 0}
-          - {order_item_id: 4, order_id: 1, product_id: 1, quantity: 1, unit_price: 10, discount: -1, has_quantity_problem: 0, has_unit_price_problem: 0}
-          - {order_item_id: 5, order_id: 1, product_id: 1, quantity: 0, unit_price: 10, discount: 0, has_quantity_problem: 1, has_unit_price_problem: 0}
-          - {order_item_id: 6, order_id: 1, product_id: 1, quantity: 1, unit_price: null, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 1}
-          - {order_item_id: 7, order_id: 2, product_id: 1, quantity: 1, unit_price: 10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 0}
-          - {order_item_id: 8, order_id: 404, product_id: 1, quantity: 1, unit_price: 10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 0}
-          - {order_item_id: 9, order_id: 3, product_id: 1, quantity: 1, unit_price: 10, discount: 10, has_quantity_problem: 0, has_unit_price_problem: 0}
+          - {order_item_id: 1, order_id: 1, product_id: 999, quantity: 3, unit_price: 10, discount: 15, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+          - {order_item_id: 1, order_id: 1, product_id: 999, quantity: 3, unit_price: 10, discount: 15, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+          - {order_item_id: 2, order_id: 1, product_id: 1, quantity: 2, unit_price: 10, discount: 21, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 3, order_id: 1, product_id: 1, quantity: 1, unit_price: 10, discount: null, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 4, order_id: 1, product_id: 1, quantity: 1, unit_price: 10, discount: -1, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 5, order_id: 1, product_id: 1, quantity: 0, unit_price: 10, discount: 0, has_quantity_problem: 1, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 6, order_id: 1, product_id: 1, quantity: 1, unit_price: null, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 1, has_discount_problem: 1}
+          - {order_item_id: 7, order_id: 2, product_id: 1, quantity: 1, unit_price: 10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+          - {order_item_id: 8, order_id: 404, product_id: 1, quantity: 1, unit_price: 10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+          - {order_item_id: 9, order_id: 3, product_id: 1, quantity: 1, unit_price: 10, discount: 10, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+          - {order_item_id: 10, order_id: 3, product_id: 1, quantity: 1, unit_price: 10, discount: 9, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+          - {order_item_id: 11, order_id: 1, product_id: 1, quantity: 1, unit_price: 0, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 1, has_discount_problem: 1}
+          - {order_item_id: 12, order_id: 1, product_id: 1, quantity: 1, unit_price: -10, discount: 0, has_quantity_problem: 0, has_unit_price_problem: 1, has_discount_problem: 1}
     expect:
       rows:
         - {order_item_id: 1, order_id: 1, customer_id: 999, product_id: 999, status: COMPLETED, quantity: 3, discount: 15, gross_revenue: 30, net_revenue: 15}
-        - {order_item_id: 9, order_id: 3, customer_id: 1, product_id: 1, status: CANCELED, quantity: 1, discount: 10, gross_revenue: 10, net_revenue: 0}
+        - {order_item_id: 10, order_id: 3, customer_id: 1, product_id: 1, status: CANCELED, quantity: 1, discount: 9, gross_revenue: 10, net_revenue: 1}

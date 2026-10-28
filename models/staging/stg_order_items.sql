@@ -25,8 +25,10 @@ SELECT
     END AS has_unit_price_problem
 ,   CASE
         WHEN (roi.discount IS NULL)
+            OR (roi.quantity IS NULL) OR (roi.quantity <= 0)
+            OR (roi.unit_price IS NULL) OR (roi.unit_price <= 0)
             OR (roi.discount < 0)
-            OR (roi.discount > roi.unit_price) THEN 1
+            OR (roi.discount >= roi.quantity * roi.unit_price) THEN 1
         ELSE 0
     END AS has_discount_problem
 FROM raw_order_items AS roi

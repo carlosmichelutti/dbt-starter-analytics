@@ -29,10 +29,10 @@ models:
         data_type: numeric
       - name: discount
         description: >-
-          Numeric discount parsed with parse_money, preserving negatives. Missing,
-          malformed, or ambiguous input becomes NULL rather than zero. The current
-          quality rule compares this amount with unit_price; whether the source
-          discount applies per unit or per line still needs business confirmation.
+          Total discount for the entire line, applied once. Parsed with
+          parse_money, preserving negatives. Missing, malformed, or ambiguous
+          input becomes NULL rather than zero. Must be nonnegative and strictly
+          below quantity multiplied by unit_price for a valid sale.
         data_type: numeric
       - name: has_quantity_problem
         description: 1 when quantity is NULL, zero, or negative, otherwise 0.
@@ -54,9 +54,10 @@ models:
                 quote: false
       - name: has_discount_problem
         description: >-
-          1 when discount is NULL, negative, or greater than a known unit_price,
-          otherwise 0. A zero flag does not establish the upper bound when
-          unit_price is NULL; consult has_unit_price_problem as well.
+          1 when quantity or unit_price is missing or nonpositive, discount is
+          missing or negative, or discount is at least quantity times unit_price.
+          Otherwise 0. A full line discount is invalid because net revenue must
+          be strictly positive.
         data_type: integer
         data_tests:
           - not_null
@@ -74,8 +75,26 @@ unit_tests:
           - {order_item_id: 1, order_id: 999, product_id: 999, quantity: -2, unit_price: '-29,99', discount: '-5.00'}
           - {order_item_id: 1, order_id: 999, product_id: 999, quantity: 2, unit_price: '1.299,00', discount: '10,00'}
           - {order_item_id: 2, order_id: 999, product_id: 999, quantity: null, unit_price: 'invalid', discount: ''}
+          - {order_item_id: 3, order_id: 999, product_id: 999, quantity: 4, unit_price: '14.99', discount: '20.00'}
+          - {order_item_id: 4, order_id: 999, product_id: 999, quantity: 2, unit_price: '10', discount: '20'}
+          - {order_item_id: 5, order_id: 999, product_id: 999, quantity: 1, unit_price: '10', discount: '11'}
+          - {order_item_id: 6, order_id: 999, product_id: 999, quantity: 1, unit_price: '0', discount: '0'}
+          - {order_item_id: 7, order_id: 999, product_id: 999, quantity: 1, unit_price: '-10', discount: '0'}
+          - {order_item_id: 8, order_id: 999, product_id: 999, quantity: 1, unit_price: '10', discount: ''}
+          - {order_item_id: 9, order_id: 999, product_id: 999, quantity: 1, unit_price: '10', discount: '-1'}
+          - {order_item_id: 10, order_id: 999, product_id: 999, quantity: null, unit_price: '10', discount: '0'}
+          - {order_item_id: 11, order_id: 999, product_id: 999, quantity: 0, unit_price: '10', discount: '0'}
     expect:
       rows:
         - {order_item_id: 1, order_id: 999, product_id: 999, quantity: -2, unit_price: '-29.99', discount: '-5.00', has_quantity_problem: 1, has_unit_price_problem: 1, has_discount_problem: 1}
         - {order_item_id: 1, order_id: 999, product_id: 999, quantity: 2, unit_price: '1299.00', discount: '10.00', has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
         - {order_item_id: 2, order_id: 999, product_id: 999, quantity: null, unit_price: null, discount: null, has_quantity_problem: 1, has_unit_price_problem: 1, has_discount_problem: 1}
+        - {order_item_id: 3, order_id: 999, product_id: 999, quantity: 4, unit_price: '14.99', discount: '20.00', has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 0}
+        - {order_item_id: 4, order_id: 999, product_id: 999, quantity: 2, unit_price: '10', discount: '20', has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+        - {order_item_id: 5, order_id: 999, product_id: 999, quantity: 1, unit_price: '10', discount: '11', has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+        - {order_item_id: 6, order_id: 999, product_id: 999, quantity: 1, unit_price: '0', discount: '0', has_quantity_problem: 0, has_unit_price_problem: 1, has_discount_problem: 1}
+        - {order_item_id: 7, order_id: 999, product_id: 999, quantity: 1, unit_price: '-10', discount: '0', has_quantity_problem: 0, has_unit_price_problem: 1, has_discount_problem: 1}
+        - {order_item_id: 8, order_id: 999, product_id: 999, quantity: 1, unit_price: '10', discount: null, has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+        - {order_item_id: 9, order_id: 999, product_id: 999, quantity: 1, unit_price: '10', discount: '-1', has_quantity_problem: 0, has_unit_price_problem: 0, has_discount_problem: 1}
+        - {order_item_id: 10, order_id: 999, product_id: 999, quantity: null, unit_price: '10', discount: '0', has_quantity_problem: 1, has_unit_price_problem: 0, has_discount_problem: 1}
+        - {order_item_id: 11, order_id: 999, product_id: 999, quantity: 0, unit_price: '10', discount: '0', has_quantity_problem: 1, has_unit_price_problem: 0, has_discount_problem: 1}

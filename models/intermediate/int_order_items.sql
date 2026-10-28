@@ -18,9 +18,7 @@ WITH orders AS (
     FROM {{ ref('stg_order_items') }} AS oi
     WHERE oi.has_quantity_problem = 0
     AND oi.has_unit_price_problem = 0
-    AND oi.discount IS NOT NULL
-    AND oi.discount >= 0
-    AND oi.discount <= oi.quantity * oi.unit_price
+    AND oi.has_discount_problem = 0
 )
 SELECT
     oi.order_item_id AS order_item_id

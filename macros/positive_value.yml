@@ -1,0 +1,12 @@
+version: 2
+
+macros:
+  - name: test_positive_value
+    description: Rejects NULL, zero, or negative transaction amounts and counts.
+    arguments:
+      - name: model
+        type: relation
+        description: Relation to validate.
+      - name: column_name
+        type: string
+        description: Numeric column that must be strictly positive.
