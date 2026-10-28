@@ -18,7 +18,10 @@ models:
         description: Trimmed, uppercase customer name from staging.
         data_type: text
       - name: email
-        description: Normalized email; may be NULL or shared across customers.
+        description: >-
+          Normalized email; may be NULL. Non-null email addresses must be unique
+          according to the source quality rule. Violating records are preserved
+          in the dimension, while the source uniqueness test reports the issue.
         data_type: text
       - name: registration_date
         description: Parsed registration date; NULL is allowed and does not exclude sales.
