@@ -1,0 +1,13 @@
+dbt_starter_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DATABASE_HOST', 'localhost') }}"
+      port: "{{ env_var('DATABASE_PORT', '5432') | int }}"
+      user: "{{ env_var('DATABASE_USER', 'postgres') }}"
+      password: "{{ env_var('DATABASE_PASSWORD', 'postgres1234') }}"
+      dbname: "{{ env_var('DATABASE_NAME', 'dbt-starter-analytics') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'analytics') }}"
+      threads: 4
+      connect_timeout: 10

@@ -181,6 +181,9 @@ cython_debug/
 .cursorindexingignore
 
 # dbt
+logs/
+dbt_packages/
+profiles.yml
 dbt_starter_analytics/target/
 dbt_starter_analytics/dbt_packages/
 dbt_starter_analytics/logs/
