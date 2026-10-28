@@ -12,9 +12,6 @@ dependencies = [
     "dbt-postgres>=1.11.0",
 ]
 
-[project.scripts]
-dbt-starter-analytics = "dbt_starter_analytics:main"
-
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
 build-backend = "uv_build"
