@@ -31,15 +31,15 @@ models:
           Number of distinct COMPLETED orders containing this product. An order
           with several products is counted once for each product.
         data_type: bigint
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: units_sold
         description: Total units on retained lines for this product in COMPLETED orders.
         data_type: bigint
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: net_revenue
         description: Total line amount after discounts, for COMPLETED orders only.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
 
 unit_tests:
   - name: product_sales_distinct_orders_and_missing_products
@@ -57,7 +57,7 @@ unit_tests:
           - {order_item_id: 8, order_id: 6, product_id: 10, status: SHIPPED, quantity: 1, net_revenue: 10}
       - input: ref('dim_products')
         rows:
-          - {product_id: 10, product_name: PRODUCT}
+          - {product_id: 10, product_name: PRODUCT, unit_price: 0, has_unit_price_problem: 1}
           - {product_id: 20, product_name: NO_SALES}
     expect:
       rows:

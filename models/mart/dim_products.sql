@@ -6,4 +6,3 @@ SELECT DISTINCT
 ,   p.is_active AS is_active
 ,   p.has_unit_price_problem AS has_unit_price_problem
 FROM {{ ref('stg_products') }} AS p
-WHERE p.has_unit_price_problem = 0

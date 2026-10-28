@@ -48,11 +48,11 @@ models:
       - name: quantity_order_items
         description: Number of retained order lines; not the number of units purchased.
         data_type: bigint
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: quantity
         description: Total number of units across retained order lines.
         data_type: bigint
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: discount
         description: Total line discounts across retained order lines.
         data_type: numeric
@@ -60,8 +60,8 @@ models:
       - name: gross_revenue
         description: Total amount before discounts across retained order lines, for any status.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: net_revenue
         description: Total amount after discounts across retained order lines, for any status.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]

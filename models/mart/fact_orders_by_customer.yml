@@ -28,15 +28,15 @@ models:
       - name: quantity_orders
         description: Number of COMPLETED orders for this customer, regardless of line count.
         data_type: bigint
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: units_sold
         description: Total units on valid lines belonging to COMPLETED orders.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
       - name: net_revenue
         description: Total amount after line discounts, for COMPLETED orders only.
         data_type: numeric
-        data_tests: [not_null]
+        data_tests: [not_null, positive_value]
 
 unit_tests:
   - name: customer_sales_completed_orders_and_missing_customers
