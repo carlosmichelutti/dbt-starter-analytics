@@ -5,74 +5,124 @@ sources:
     schema: "{{ var('raw_schema', 'raw') }}"
     description: >-
       Raw e-commerce data containing customers, products, orders, and order line
-      items, used as input for staging models that standardize and validate the data.
+      items, used as input for staging models that standardize and validate the
+      data. The included CSV seeds populate these relations. Raw records may
+      contain duplicates, missing references, and invalid text values; source
+      tests report quality issues before downstream cleanup.
     tables:
       - name: customers
         identifier: raw_customers
         description: >-
-          Customer records with one row per customer, including name, email,
-          registration date, city, and state, before staging transformations.
+          Raw customer records at the intended customer_id grain. Source tests
+          check identifiers and raw email uniqueness before normalization;
+          uniqueness is an expectation rather than a cleanup operation.
         columns:
           - name: customer_id
+            description: Source customer identifier; expected to be non-null and unique.
+            data_type: integer
             data_tests: [not_null, unique]
           - name: full_name
+            description: Unnormalized customer name, including original casing and spaces.
+            data_type: text
             data_tests: [not_null]
           - name: email
+            description: Raw email text; nullable. Uniqueness is checked before trimming and lowercasing.
+            data_type: text
             data_tests: [unique]
           - name: registration_date
+            description: Raw registration date text; missing or invalid dates are handled in staging.
+            data_type: text
             data_tests: []
           - name: city
+            description: Unnormalized customer city.
+            data_type: text
             data_tests: []
           - name: state
+            description: Unnormalized customer state abbreviation.
+            data_type: text
             data_tests: []
       - name: products
         identifier: raw_products
         description: >-
-          Product catalog records with one row per product, including product name,
-          category, unit price, and active status, before staging transformations.
+          Raw catalog records at the intended product_id grain, including inactive
+          products and invalid catalog prices. Source tests check identifier and
+          raw product-name uniqueness without modifying the data.
         columns:
           - name: product_id
+            description: Source product identifier; expected to be non-null and unique.
+            data_type: integer
             data_tests: [not_null, unique]
           - name: product_name
+            description: Raw product name; expected to be non-null and unique before normalization.
+            data_type: text
             data_tests: [not_null, unique]
           - name: category
+            description: Unnormalized product category.
+            data_type: text
             data_tests: []
           - name: unit_price
+            description: Raw catalog price text; may contain currency symbols, decimal separators, or invalid values.
+            data_type: text
             data_tests: []
           - name: is_active
+            description: Raw text flag; staging recognizes true/false tokens and defaults unknown values to FALSE.
+            data_type: text
             data_tests: []
       - name: orders
         identifier: raw_orders
         description: >-
-          Order records with one row per order, including the customer identifier,
-          order date, order status, and payment method, before staging transformations.
+          Raw order headers at the intended order_id grain. The fixtures include
+          exact duplicate headers, invalid dates, and customer identifiers absent
+          from the customer source. Staging preserves these rows.
         columns:
           - name: order_id
+            description: Source order identifier; expected to be unique, although fixtures contain duplicates.
+            data_type: integer
             data_tests: [not_null, unique]
           - name: customer_id
+            description: Customer identifier from the header; a matching customer record is not guaranteed.
+            data_type: integer
             data_tests: [not_null]
           - name: order_date
+            description: Raw order date text; invalid or missing dates become NULL in staging.
+            data_type: text
             data_tests: []
           - name: status
+            description: Raw order status; staging standardizes casing and COMPLETE/COMPLETED and CANCELLED/CANCELED aliases.
+            data_type: text
             data_tests: []
           - name: payment_method
+            description: Raw payment method text before normalization.
+            data_type: text
             data_tests: []
       - name: order_items
         identifier: raw_order_items
         description: >-
-          Order line item records with one row per order item, linking orders to
-          products and recording quantity, unit price, and discount before staging
-          transformations.
+          Raw order lines at the intended order_item_id grain, including exact
+          duplicates, unmatched references, and invalid amounts. Discount is the
+          total discount for the line, applied once after quantity times unit price.
         columns:
           - name: order_item_id
+            description: Source line identifier; expected to be unique, although fixtures contain duplicates.
+            data_type: integer
             data_tests: [not_null, unique]
           - name: order_id
+            description: Referenced order identifier; unmatched headers are excluded in intermediate.
+            data_type: integer
             data_tests: [not_null]
           - name: product_id
+            description: Referenced product identifier; unmatched products remain in valid downstream lines.
+            data_type: integer
             data_tests: [not_null]
           - name: quantity
+            description: Raw integer unit count; NULL, zero, and negative quantities are flagged in staging.
+            data_type: integer
             data_tests: []
           - name: unit_price
+            description: Raw transaction price per unit as text, independent of the catalog price.
+            data_type: text
             data_tests: []
           - name: discount
+            description: Raw total line discount as text; missing values are not assumed to be zero.
+            data_type: text
             data_tests: []
