@@ -7,7 +7,6 @@ staging views, validated intermediate tables, dimensions, and sales facts.
 The fictional CSV inputs deliberately contain duplicate records, invalid dates
 and amounts, missing attributes, and unmatched customer/product references. The
 project exposes these issues while producing consistent analytics from valid lines.
-Docker runs PostgreSQL; Python, uv, and dbt run on your host machine.
 
 ## Architecture and layers
 
@@ -112,7 +111,6 @@ models/intermediate/      Validated order lines/totals, each with a YAML
 models/mart/              Two dimensions and three facts, each with a YAML
 macros/                   Money parser, positive-value test, schema naming, YAMLs
 tests/                    SQL assertions for calculations and reconciliation
-docs/review.md            Review findings and verification of supplied data
 ```
 
 Each model has a same-named `.yml` file alongside its `.sql` file. It documents
@@ -343,7 +341,6 @@ positive values, parsing, arithmetic, catalog preservation, and reconciliation.
 | `assert_valid_order_totals.sql` | Positive order totals, nonnegative discounts, and net arithmetic. |
 | `assert_catalog_products_remain_linked.sql` | Products present in staging remain available in the dimension for retained lines. |
 | `assert_sales_totals_reconcile.sql` | Global intermediate/fact totals and aggregate sales against `COMPLETED` lines. |
-| `assert_model_grains_reconcile.sql` | Complete rows in both directions for dimensions, intermediate order totals, the order fact, and customer/product aggregates. Detects missing/extra rows, duplicates, changed attributes, and per-entity differences hidden by global sums. |
 
 YAML unit tests cover parsing/date/status normalization, deduplication, valid line
 selection, optional attributes, missing dimensions, aggregation, and the
@@ -383,5 +380,4 @@ uv run dbt test --select assert_sales_totals_reconcile assert_model_grains_recon
 ```
 
 The analytical selection passes with five warnings on the supplied data. It does
-not replace source validation. See [docs/review.md](docs/review.md) for the review
-results and reconciled values.
+not replace source validation.
